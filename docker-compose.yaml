@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    # volumes:
+    #   - ./loki-config/:/etc/loki/
+    healthcheck:
+      test: wget =1 --tries=1 -O- http://localhost:3100/ready
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  promtail:
+    container_name: promtail
+    image: grafana/promtail:latest
+    ports:
+      - "9080:9080"
+    volumes:
+      - ./promtail-config/config.yaml:/etc/promtail/config.yaml
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    # volumes:
+    #   - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    ports:
+      - "3000:3000"
+    environment:
+      - gf_paths_provisioning=/etc/grafana/provisioning
+      - gf_auth_anonymous_enabled=true
+      - gf_auth_anonymous_org_role=admin
+    depends_on:
+      - loki
